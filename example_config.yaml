@@ -1,0 +1,25 @@
+# Example config: replay and training keys only. The full run config is not published.
+# Books 2 and 3 train a fresh LoRA on the previous book's merged weights.
+training:
+  base_full: ${MODELS}/Qwen2.5-7B-Instruct
+  base_commit: a09a35458c702b33eeacc393d103063234e8bc28
+  system_prompt_file: prompts/system_prompt.txt   # not shipped: supply your own
+  lora: {dropout: 0, targets: [q_proj, k_proj, v_proj, o_proj, gate_proj, up_proj, down_proj]}
+  seq_len: 512
+  batch: 32
+  warmup_steps: 10
+  optim: adamw_8bit
+  seed: 42
+
+recipe:
+  stage1: {epochs: 2, lr: 3.0e-4, r: 128, alpha: 128, micro: 4}
+  # stage-2 everyday / knowledge counts are per 1,280 units and scale with the book's unit count
+  stage2: {epochs: 1, lr: 5.0e-5, micro: 4, everyday: 1000, knowledge: 2000}
+  everyday_rows: 5042
+  # Book N > 1 re-samples (seeded, no generation calls) from the earlier books' stored rows.
+  # Counts are capped at the rows that exist.
+  replay:
+    stage1_book1_rows: 45000
+    stage1_other_frac: 0.40
+    stage2_book1_rows: 3600
+    stage2_other_frac: 0.50
