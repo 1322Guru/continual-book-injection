@@ -43,6 +43,8 @@ What the table shows:
 - **Both replay arms kept book A near its T1 score,** with ratios from 0.92 to 1.15.
 - **Share and fixed replay did not clearly separate.** Fixed scored higher on book A at each seed (mean 51.0 against 46.5 full, 45.0 against 42.0 cleaned), but the seed ranges overlap (44 to 49 against 47 to 55) and two seeds cannot settle it.
 - **The seed-to-seed spread is large:** up to 8 points on book A and 9 on book B within one arm.
+- **Replay did not reduce what was learned of book B:** fixed scored 65 and 58 and share 62 and 53, against 55 with no replay on one seed. This is two seeds on small books.
+- **Why share and fixed may not separate here:** the row contrast is only 2.0 times (4,700 against 2,325), against about 21 times in the contest (45,000 against 2,154).
 
 ### Hardware and time
 
@@ -60,15 +62,19 @@ This demo ran on one configuration only: two GPUs in model parallel, an RTX 5070
 
 The whole run took 5.89 hours.
 
+`./run_demo.sh --smoke` passed from a fresh clone of commit dd59432 on this same machine, with a new virtual environment built from `requirements.lock` and a fresh download of the base model: all 17 stages, no errors, 2.06 hours of stage time. Later commits change only this README. It has not been run on any other machine.
+
 ### Caveats
 
 - **Small books.** Each is about a hundred single sentences sampled from a longer text, not continuous prose.
-- **Few seeds.** Arms (b) and (c) ran two seeds, arm (a) one, and T1 one. Both seeds of every arm start from the same T1, so T1's own variance is unmeasured.
+- **A re-run will not match these numbers exactly.** Fixed seeds do not make training bit-identical. Two 20-step smoke runs with the same seed and identical input rows produced different adapters, and 4 to 9 of 20 answers differed per trained stage. Answers from the untrained base model were identical (0 of 20 differed). The seed spread in the table therefore includes this run-to-run noise.
+- **Few seeds.** Arms (b) and (c) ran two seeds, arm (a) one, and T1 one.
+- **Every ratio is relative to a single T1 run.** All arms start from that one T1, and T1's own seed spread is not measured.
 - **The arms differ in more than replay.** More replay also means more training steps.
 - **A ratio above 1 does not mean there was no forgetting.** The replay arms keep training book A, so its score can rise.
 - **The eval is recall of trained facts in new wording, not held-out facts.** Every unit is in the training rows. Questions sharing 8 consecutive words with that book's training rows were dropped.
 - **Eval questions are model-written.** Gemma 4 31B wrote them, a different family from the Qwen teacher. Some are vague out of context, and the cleaned set removes only what one fixed rule catches.
-- **Matcher scoring.** The scorer is a deterministic key-fact match with no LLM judge. It can miss correct paraphrases and can pass a long answer that contains the key words.
+- **Matcher scoring.** The scorer is a deterministic key-fact match with no LLM judge. It can miss correct paraphrases and can pass a long answer that contains the key words. It also counts a range answer containing the reference as a match. This applies to all arms equally.
 - **Scores are not comparable with the contest report below.** The demo uses Transformers in bf16 with greedy decoding, the contest used a q8 GGUF stack, and the books, questions and scorer all differ.
 - **Everyday answers were generated under a different system prompt** from the one in `data/system_prompt.txt`.
 - **The share arm re-samples stored rows.** The contest share run regenerated part of its replay.
@@ -144,7 +150,7 @@ Generated training rows were written by an open-weight Qwen teacher (Qwen3.8-27B
 | `pipeline/ctx.py`, `pipeline/units.py` | Paths and the config loader that the modules above import |
 | `example_config.yaml` | Replay and training keys only |
 
-The modules are edited excerpts, not the code as it ran. Internal names were changed, and `governor.py` had its API cost planning removed. `governor.py` also reads `governor:` and `book:` config blocks that `example_config.yaml` does not include. The edited modules import, but none of them has been run in this form.
+The modules are edited excerpts, not the code as it ran. Internal names were changed, and `governor.py` had its API cost planning removed. `governor.py` also reads `governor:` and `book:` config blocks that `example_config.yaml` does not include. The demo above ran these modules in their edited form: `pipeline/train_bf16.py`, `pipeline/pack.py`, `pipeline/ctx.py`, `pipeline/units.py`, the merge step of `pipeline/merge_export.py`, and the `alloc` and `knowledge_per_unit` functions of `pipeline/mix.py`. These have still not been run in this form: `pipeline/governor.py`, `pipeline/train_stage2.py`, the GGUF step of `pipeline/merge_export.py`, and the rest of `pipeline/mix.py`.
 
 ## What is withheld
 
