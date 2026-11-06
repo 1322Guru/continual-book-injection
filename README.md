@@ -8,7 +8,7 @@ This demo trains Qwen2.5-7B-Instruct with LoRA on two public-domain books in seq
 ./run_demo.sh
 ```
 
-The script builds a virtual environment from `requirements.lock`, checks every data file against `data/SHA256SUMS`, downloads the pinned base model (about 15 GB) and runs all stages. `./run_demo.sh --plan` prints exact step counts first, and `./run_demo.sh --smoke` runs every stage briefly (20 steps per stage, 10 questions per book, seed 42). It needs Python 3.12 and NVIDIA driver 580 or later. The output folder was 24 GB after the run, and one merged model (about 15 GB more) exists at a time while an arm is scored.
+The script builds a virtual environment from `requirements.lock`, checks every data file against `data/SHA256SUMS`, downloads the pinned base model (about 15 GB) and runs all stages. `./run_demo.sh --plan` prints exact step counts first, and `./run_demo.sh --smoke` runs every stage briefly (20 steps per stage, 10 questions per book, seed 42). It needs Python 3.12 and NVIDIA driver 580 or later. On Ubuntu 24.04 that means the apt packages `python3.12-venv`, `python3.12-dev`, `git` and `build-essential`: the first builds the virtual environment, and Triton compiles a C extension against `Python.h` during the run. The output folder was 24 GB after the run, and one merged model (about 15 GB more) exists at a time while an arm is scored.
 
 ### What it does
 
@@ -48,7 +48,7 @@ What the table shows:
 
 ### Hardware and time
 
-This demo ran on one configuration only: two GPUs in model parallel, an RTX 5070 Ti 16 GB and an RTX 5060 Ti 16 GB, under WSL2 with driver 617.42. Peak VRAM, as allocated by PyTorch, was 10.2 GB and 14.45 GB. Models were read from and written to a separate Windows drive mounted in WSL2. As a contest measurement, not from this demo, training used 36.8 GB on one A6000 48 GB. The single-GPU code path was not run for this demo.
+The full demo ran on one configuration only: two GPUs in model parallel, an RTX 5070 Ti 16 GB and an RTX 5060 Ti 16 GB, under WSL2 with driver 617.42. Peak VRAM, as allocated by PyTorch, was 10.2 GB and 14.45 GB. Models were read from and written to a separate Windows drive mounted in WSL2. As a contest measurement, not from this demo, training used 36.8 GB on one A6000 48 GB. The single-GPU code path ran only as the `--smoke` check below, not as the full demo.
 
 | Stage | Steps | s/step | Train (load included) | Merge | Score | Total |
 |---|---|---|---|---|---|---|
@@ -62,7 +62,9 @@ This demo ran on one configuration only: two GPUs in model parallel, an RTX 5070
 
 The whole run took 5.89 hours.
 
-`./run_demo.sh --smoke` passed from a fresh clone of commit dd59432 on this same machine, with a new virtual environment built from `requirements.lock` and a fresh download of the base model: all 17 stages, no errors, 2.06 hours of stage time. Later commits change only this README. It has not been run on any other machine.
+`./run_demo.sh --smoke` passed from a fresh clone of commit dd59432 on this same machine, with a new virtual environment built from `requirements.lock` and a fresh download of the base model: all 17 stages, no errors, 2.06 hours of stage time. Later commits change only this README and the file modes of `data/results/`.
+
+`./run_demo.sh --smoke` also passed from a fresh clone of the public repo at commit cfacc73 on one rented NVIDIA RTX A6000 48 GB, driver 580.178.04, Ubuntu 24.04, 4.32 CPU cores (container quota): all 17 stages, no errors, 7.68 to 7.70 s/step with gradient checkpointing off, peak VRAM 37.48 GB as allocated by PyTorch, 24.5 minutes of stage time, 30.0 minutes with setup and the model download. This is the only run on another machine, and the full demo has not been run on one.
 
 ### Caveats
 
