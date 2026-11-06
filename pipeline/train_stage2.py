@@ -36,7 +36,7 @@ def main(argv):
     out, srcs = argv[0], argv[1:]
     cfg, _ = U.load_config()
     T = dict(cfg["training"])
-    spf = os.path.join(ROOT, T["system_prompt_file"])   # not shipped: supply your own
+    spf = os.path.join(ROOT, T["system_prompt_file"])
     system = open(spf, encoding="utf-8").read()
     rows, per_src = [], {}
     for s in srcs:

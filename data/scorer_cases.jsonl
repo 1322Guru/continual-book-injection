@@ -1,0 +1,16 @@
+{"reference": "2 000 лет", "answer": "двух тысяч лет", "expected": true}
+{"reference": "2 000 лет", "answer": "около двух тысяч лет назад", "expected": true}
+{"reference": "две тысячи", "answer": "2000", "expected": true}
+{"reference": "6 миллиардов", "answer": "шесть миллиардов человек", "expected": true}
+{"reference": "1 секунду", "answer": "за одну секунду", "expected": true}
+{"reference": "3 000 лет", "answer": "около 3000 лет", "expected": true}
+{"reference": "двадцать пять верст", "answer": "25 верст", "expected": true}
+{"reference": "сто лет", "answer": "100 лет", "expected": true}
+{"reference": "2 000 лет", "answer": "двух миллионов лет", "expected": false}
+{"reference": "5 верст", "answer": "пятнадцать верст", "expected": false}
+{"reference": "биллионы", "answer": "биллионов солнц", "expected": true}
+{"reference": "400 лет", "answer": "500 лет", "expected": false}
+{"reference": "500 лет", "answer": "100—500 лет", "expected": true}
+{"reference": "100 500 лет", "answer": "100—500 лет", "expected": false}
+{"reference": "3 000 лет", "answer": "от 2 000 до 3 000 лет", "expected": true}
+{"reference": "4 000 лет", "answer": "от 2 000 до 3 000 лет", "expected": false}

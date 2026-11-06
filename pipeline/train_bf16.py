@@ -3,7 +3,7 @@
 (device_map, model parallel). Gradient checkpointing; micro-batch x accumulation = effective batch 32 (B: 32 x 1).
 Row packing and loss masking in pipeline/pack.py; system prompt from the config, seq 512, cosine, warmup 10, adamw_8bit.
 
-  python -I pipeline/train_bf16.py [--epochs E] [--lr X] [--r R] [--alpha A] [--micro M] [--max-steps N] <out_dir> <rows.jsonl>...
+  python -I pipeline/train_bf16.py [--epochs E] [--lr X] [--r R] [--alpha A] [--micro M] [--max-steps N] [--seed S] <out_dir> <rows.jsonl>...
   --max-steps N: benchmark, N optimizer steps, no adapter saved (sec/step and memory in bench.json)
 """
 import hashlib
@@ -28,14 +28,15 @@ def sha(p):
 
 
 def main(argv):
-    opt = {"--epochs": 2.0, "--lr": 3e-4, "--r": 128, "--alpha": 128, "--micro": 8, "--max-steps": 0}
+    opt = {"--epochs": 2.0, "--lr": 3e-4, "--r": 128, "--alpha": 128, "--micro": 8, "--max-steps": 0, "--seed": 0}
     while argv and argv[0] in opt:
         opt[argv[0]] = type(opt[argv[0]])(argv[1])
         argv = argv[2:]
     out, srcs = argv[0], argv[1:]
     cfg, _ = U.load_config()
     T = dict(cfg["training"])
-    spf = os.path.join(ROOT, T["system_prompt_file"])   # not shipped: supply your own
+    T["seed"] = opt["--seed"] or T["seed"]
+    spf = os.path.join(ROOT, T["system_prompt_file"])
     system = open(spf, encoding="utf-8").read()
     rows, per_src = [], {}
     for s in srcs:
