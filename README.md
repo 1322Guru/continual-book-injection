@@ -1,8 +1,86 @@
 # continual-book-injection
 
+## Re-runnable demo (public-domain books)
+
+This demo trains Qwen2.5-7B-Instruct with LoRA on two public-domain books in sequence and measures how much of the first book survives training on the second, with and without replay. Everything it needs is in this repo or fetched by the one command below.
+
+```
+./run_demo.sh
+```
+
+The script builds a virtual environment from `requirements.lock`, checks every data file against `data/SHA256SUMS`, downloads the pinned base model (about 15 GB) and runs all stages. `./run_demo.sh --plan` prints exact step counts first, and `./run_demo.sh --smoke` runs every stage briefly (20 steps per stage, 10 questions per book, seed 42). It needs Python 3.12 and NVIDIA driver 580 or later. The output folder was 24 GB after the run, and one merged model (about 15 GB more) exists at a time while an arm is scored.
+
+### What it does
+
+- **T0:** score the base model on books A and B.
+- **T1:** train book A on the base model and merge. This is book A's start score.
+- **Arms:** each trains book B on top of T1.
+  - (a) No replay.
+  - (b) Share replay: the contest's rule, replay = round(0.30 / 0.70 x book B rows, everyday excluded) = 2,325 book-A rows.
+  - (c) Fixed replay: 4,700 book-A rows, which is 75% of book A's 6,289 knowledge and verbatim rows.
+
+Replay rows are stratified by type and spread evenly over units. All training uses LoRA r 128, alpha 128, LR 3e-4, 2 epochs and batch 32. These are the stage-1 settings from the contest recipe, with no stage 2 and no trap rows. Seeds: 42 for T1 and all arms, plus 43 for arms (b) and (c).
+
+Book A is Tsiolkovsky, "Grezy o Zemle i nebe" (126 units, 6,860 rows). Book B is Darwin in Rachinsky's 1864 translation (109 units, 5,895 rows). Each unit is one sentence. See `data/LICENSE_NOTE.md`.
+
+### Results
+
+Each book has 100 eval questions. Every score is shown twice: on the full set, and on the cleaned set with underspecified questions removed (89 for A, 91 for B). Ratio is the book-A score divided by the T1 score on the same set.
+
+| Stage | A full | A ratio | B full | A cleaned | A ratio cleaned | B cleaned |
+|---|---|---|---|---|---|---|
+| T0 base | 6/100 | | 5/100 | 6/89 | | 5/91 |
+| T1 book A | 48/100 | 1.00 | 3/100 | 42/89 | 1.00 | 3/91 |
+| (a) no replay, seed 42 | 13/100 | 0.27 | 55/100 | 12/89 | 0.29 | 51/91 |
+| (b) share, seed 42 | 44/100 | 0.92 | 62/100 | 40/89 | 0.95 | 57/91 |
+| (b) share, seed 43 | 49/100 | 1.02 | 53/100 | 44/89 | 1.05 | 48/91 |
+| (c) fixed, seed 42 | 47/100 | 0.98 | 65/100 | 42/89 | 1.00 | 59/91 |
+| (c) fixed, seed 43 | 55/100 | 1.15 | 58/100 | 48/89 | 1.14 | 53/91 |
+
+What the table shows:
+
+- **Without replay, most of book A was lost:** 48 fell to 13, in the one seed run.
+- **Both replay arms kept book A near its T1 score,** with ratios from 0.92 to 1.15.
+- **Share and fixed replay did not clearly separate.** Fixed scored higher on book A at each seed (mean 51.0 against 46.5 full, 45.0 against 42.0 cleaned), but the seed ranges overlap (44 to 49 against 47 to 55) and two seeds cannot settle it.
+- **The seed-to-seed spread is large:** up to 8 points on book A and 9 on book B within one arm.
+
+### Hardware and time
+
+This demo ran on one configuration only: two GPUs in model parallel, an RTX 5070 Ti 16 GB and an RTX 5060 Ti 16 GB, under WSL2 with driver 617.42. Peak VRAM, as allocated by PyTorch, was 10.2 GB and 14.45 GB. Models were read from and written to a separate Windows drive mounted in WSL2. As a contest measurement, not from this demo, training used 36.8 GB on one A6000 48 GB. The single-GPU code path was not run for this demo.
+
+| Stage | Steps | s/step | Train (load included) | Merge | Score | Total |
+|---|---|---|---|---|---|---|
+| T0 base | | | | | 12 min | 12 min |
+| T1 book A | 94 | 17.60 | 33 min | 13 min | 5 min | 52 min |
+| (a) no replay, seed 42 | 80 | 17.90 | 30 min | 14 min | 6 min | 50 min |
+| (b) share, seed 42 | 106 | 17.73 | 36 min | 13 min | 6 min | 56 min |
+| (b) share, seed 43 | 106 | 17.73 | 36 min | 14 min | 6 min | 56 min |
+| (c) fixed, seed 42 | 132 | 17.67 | 44 min | 13 min | 6 min | 64 min |
+| (c) fixed, seed 43 | 132 | 17.65 | 44 min | 13 min | 6 min | 64 min |
+
+The whole run took 5.89 hours.
+
+### Caveats
+
+- **Small books.** Each is about a hundred single sentences sampled from a longer text, not continuous prose.
+- **Few seeds.** Arms (b) and (c) ran two seeds, arm (a) one, and T1 one. Both seeds of every arm start from the same T1, so T1's own variance is unmeasured.
+- **The arms differ in more than replay.** More replay also means more training steps.
+- **A ratio above 1 does not mean there was no forgetting.** The replay arms keep training book A, so its score can rise.
+- **The eval is recall of trained facts in new wording, not held-out facts.** Every unit is in the training rows. Questions sharing 8 consecutive words with that book's training rows were dropped.
+- **Eval questions are model-written.** Gemma 4 31B wrote them, a different family from the Qwen teacher. Some are vague out of context, and the cleaned set removes only what one fixed rule catches.
+- **Matcher scoring.** The scorer is a deterministic key-fact match with no LLM judge. It can miss correct paraphrases and can pass a long answer that contains the key words.
+- **Scores are not comparable with the contest report below.** The demo uses Transformers in bf16 with greedy decoding, the contest used a q8 GGUF stack, and the books, questions and scorer all differ.
+- **Everyday answers were generated under a different system prompt** from the one in `data/system_prompt.txt`.
+- **The share arm re-samples stored rows.** The contest share run regenerated part of its replay.
+- **Not measured here:** made-up answers, refusals and general ability. The demo has no trap rows.
+
+The scorer changes and the underspecified-question rule were committed before the full run started (commit e50b18a). The rule is in `demo/flag_eval.py`, and the flagged list is `data/eval/underspecified.jsonl`. All answers and raw results are in `data/results/`.
+
+## Contest report
+
 A report, with code excerpts, on step-wise LoRA training of Qwen2.5-7B-Instruct on three books in sequence, with forgetting of the first book measured after the third.
 
-**This repo is not runnable as published.** It is a write-up of measured results plus the modules that implement the replay and training steps. There is no data, no driver script, no row generation and no scorer here.
+**The contest pipeline below is not runnable as published. The demo above is.** The report below is a write-up of measured contest results plus the modules that implement the replay and training steps. The contest's data, driver script, row generation and scorer are not here.
 
 Author: Gursimran Singh. License: Apache-2.0.
 

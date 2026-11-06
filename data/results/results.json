@@ -1,0 +1,134 @@
+{
+ "t0": {
+  "A": 6,
+  "A_of": 100,
+  "B": 5,
+  "B_of": 100,
+  "A_clean": 6,
+  "A_clean_of": 89,
+  "B_clean": 5,
+  "B_clean_of": 91,
+  "ratio": 0.125,
+  "ratio_clean": 0.143
+ },
+ "t1": {
+  "A": 48,
+  "A_of": 100,
+  "B": 3,
+  "B_of": 100,
+  "A_clean": 42,
+  "A_clean_of": 89,
+  "B_clean": 3,
+  "B_clean_of": 91,
+  "steps": 94,
+  "train_s": 1654.6,
+  "s_per_step": 17.6,
+  "peak_vram_gb": {
+   "0": 10.2,
+   "1": 14.45
+  },
+  "mean_loss": 0.5867215154018808,
+  "ratio": 1.0,
+  "ratio_clean": 1.0
+ },
+ "arm_none_s42": {
+  "A": 13,
+  "A_of": 100,
+  "B": 55,
+  "B_of": 100,
+  "A_clean": 12,
+  "A_clean_of": 89,
+  "B_clean": 51,
+  "B_clean_of": 91,
+  "steps": 80,
+  "train_s": 1432.4,
+  "s_per_step": 17.9,
+  "peak_vram_gb": {
+   "0": 10.2,
+   "1": 14.45
+  },
+  "mean_loss": 0.5457849651575089,
+  "ratio": 0.271,
+  "ratio_clean": 0.286
+ },
+ "arm_share_s42": {
+  "A": 44,
+  "A_of": 100,
+  "B": 62,
+  "B_of": 100,
+  "A_clean": 40,
+  "A_clean_of": 89,
+  "B_clean": 57,
+  "B_clean_of": 91,
+  "steps": 106,
+  "train_s": 1879.0,
+  "s_per_step": 17.73,
+  "peak_vram_gb": {
+   "0": 10.2,
+   "1": 14.45
+  },
+  "mean_loss": 0.4617596502011677,
+  "ratio": 0.917,
+  "ratio_clean": 0.952
+ },
+ "arm_share_s43": {
+  "A": 49,
+  "A_of": 100,
+  "B": 53,
+  "B_of": 100,
+  "A_clean": 44,
+  "A_clean_of": 89,
+  "B_clean": 48,
+  "B_clean_of": 91,
+  "steps": 106,
+  "train_s": 1879.6,
+  "s_per_step": 17.73,
+  "peak_vram_gb": {
+   "0": 10.2,
+   "1": 14.45
+  },
+  "mean_loss": 0.45888761768363556,
+  "ratio": 1.021,
+  "ratio_clean": 1.048
+ },
+ "arm_fixed_s42": {
+  "A": 47,
+  "A_of": 100,
+  "B": 65,
+  "B_of": 100,
+  "A_clean": 42,
+  "A_clean_of": 89,
+  "B_clean": 59,
+  "B_clean_of": 91,
+  "steps": 132,
+  "train_s": 2333.0,
+  "s_per_step": 17.67,
+  "peak_vram_gb": {
+   "0": 10.2,
+   "1": 14.45
+  },
+  "mean_loss": 0.40137881740476145,
+  "ratio": 0.979,
+  "ratio_clean": 1.0
+ },
+ "arm_fixed_s43": {
+  "A": 55,
+  "A_of": 100,
+  "B": 58,
+  "B_of": 100,
+  "A_clean": 48,
+  "A_clean_of": 89,
+  "B_clean": 53,
+  "B_clean_of": 91,
+  "steps": 132,
+  "train_s": 2329.3,
+  "s_per_step": 17.65,
+  "peak_vram_gb": {
+   "0": 10.2,
+   "1": 14.45
+  },
+  "mean_loss": 0.40529108092640387,
+  "ratio": 1.146,
+  "ratio_clean": 1.143
+ }
+}
